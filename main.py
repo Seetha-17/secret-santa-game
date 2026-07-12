@@ -1,37 +1,24 @@
 import sys
+from fastapi import FastAPI
 from models.employee import Employee
-from models.assignment import Assignment
-from server_client import SecretSantaServerClient, ServerConnectionError
+from services.csv_handler import CSVHandler
+from services.matcher import SecretSantaMatcher
 
-def run_remote_pipeline():
-    # Base URL collected directly from your browser's address bar
-    RENDER_SERVER_URL = "https://onrender.com"
-    
-    # Files configured inside your application workspace environment
-    CURRENT_YEAR_INPUT_FILE = "employee.csv"
-    PREVIOUS_YEAR_HISTORY_FILE = "previous_assignments.csv"
+# 1. This is the exact object Render is looking for!
+app = FastAPI()
 
-    print("--- Initiating Acme Remote Server Secret Santa Pipeline ---")
-    
-    # Initialize our API client module instance
-    client = SecretSantaServerClient(base_url=RENDER_SERVER_URL)
-    
+@app.post("/generate-assignments/")
+def generate_assignments(payload: dict):
+    """
+    This endpoint handles the routing for your Render webpage interface.
+    """
     try:
-        # Trigger remote generation via API call
-        server_response = client.trigger_generate_assignments(
-            current_file=CURRENT_YEAR_INPUT_FILE,
-            previous_file=PREVIOUS_YEAR_HISTORY_FILE
-        )
-        
-        # Display the server's structured feedback or data output preview
-        print("\n--- Live Server Response Data ---")
-        import json
-        print(json.dumps(server_response, indent=2))
-        
-    except ServerConnectionError as conn_error:
-        print(f"\n[API Connection Fault] {conn_error}", file=sys.stderr)
-    except Exception as general_error:
-        print(f"\n[Unexpected Local Runtime Failure] {general_error}", file=sys.stderr)
+        # Your server-side execution logic goes here...
+        return {"status": "success", "message": "Assignments generated"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
-if __name__ == "_main_":
-    run_remote_pipeline()
+# Keep your local testing block at the bottom if you have one
+if _name_ == "_main_":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
