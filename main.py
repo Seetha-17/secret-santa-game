@@ -52,20 +52,34 @@ def generate_assignments(payload: dict):
         if not os.path.exists(EMPLOYEE_FILE):
             return {"status": "error", "detail": f"Missing input file: {EMPLOYEE_FILE}"}
             
-        # 1. CHANGE THIS LINE from read_employees to read_employees_list
         employees = CSVHandler.read_employees_list(EMPLOYEE_FILE)
         
         previous_assignments = {}
         if os.path.exists(PREVIOUS_ASSIGNMENTS_FILE):
-            # 2. CHANGE THIS LINE from read_previous_assignments to read_historical_map
             previous_assignments = CSVHandler.read_historical_map(PREVIOUS_ASSIGNMENTS_FILE)
         
         matcher = SecretSantaMatcher(employees, previous_assignments)
         assignments = matcher.assign()
         
-        # 3. CHANGE THIS LINE to match your exact export function name (write_assignments_out)
         CSVHandler.write_assignments_out(OUTPUT_FILE, assignments)
-        return {"status": "success", "message": "Assignments successfully generated!"}
+        
+        # ===================================================
+        # STRUCTURING THE DATA GRID ARRAY PACKAGES FOR FASTAPI
+        # ===================================================
+        grid_data_payload = []
+        for pair in assignments:
+            grid_data_payload.append({
+                "employee_name": pair.employee.name,
+                "employee_email": pair.employee.email,
+                "secret_child_name": pair.secret_child.name,
+                "secret_child_email": pair.secret_child.email
+            })
+            
+        return {
+            "status": "success", 
+            "message": "Assignments successfully generated!",
+            "assignments": grid_data_payload  # Send the table rows to the front-end grid
+        }
         
     except Exception as e:
         return {"status": "error", "detail": str(e)}
@@ -105,6 +119,6 @@ def serve_homepage():
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

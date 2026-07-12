@@ -19,7 +19,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            max-width: 500px;
+            max-width: 800px;
             width: 100%;
         }
         h1 {
@@ -32,12 +32,6 @@
         }
         .form-group {
             margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #34495e;
-            font-weight: 600;
         }
         button {
             width: 100%;
@@ -56,11 +50,15 @@
         }
         .download-btn {
             background-color: #3498db;
-            margin-top: 10px;
+            margin-top: 15px;
             display: none;
             text-align: center;
             text-decoration: none;
             box-sizing: border-box;
+            padding: 12px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
         }
         .download-btn:hover {
             background-color: #2980b9;
@@ -75,6 +73,35 @@
         }
         .success { background-color: #d4edda; color: #155724; }
         .error { background-color: #f8d7da; color: #721c24; }
+        
+        /* GRID TABLE STYLE SCHEMAS */
+        .grid-wrapper {
+            margin-top: 25px;
+            display: none;
+            overflow-x: auto;
+        }
+        .assignments-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .assignments-grid th, .assignments-grid td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .assignments-grid th {
+            background-color: #f2f2f2;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .assignments-grid tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .assignments-grid tr:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 <body>
@@ -88,6 +115,24 @@
 
     <div id="statusMessage"></div>
 
+    <!-- RESPONSIVE LAYOUT DATA GRID DISPLAY -->
+    <div id="gridWrapper" class="grid-wrapper">
+        <h3>📊 Current Live Pairings Preview</h3>
+        <table class="assignments-grid">
+            <thead>
+                <tr>
+                    <th>Giver Name</th>
+                    <th>Giver Email</th>
+                    <th>Secret Child Name</th>
+                    <th>Secret Child Email</th>
+                </tr>
+            </thead>
+            <tbody id="gridBody">
+                <!-- Javascript will inject data rows inside here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
     <a id="downloadBtn" href="/download-assignments/" class="download-btn" download="secret_santa_assignments.csv">📥 Download Output CSV File</a>
 </div>
 
@@ -96,14 +141,17 @@
         const btn = document.getElementById('generateBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const status = document.getElementById('statusMessage');
+        const gridWrapper = document.getElementById('gridWrapper');
+        const gridBody = document.getElementById('gridBody');
         
         btn.disabled = true;
         btn.innerText = "Processing Logic...";
         status.style.display = "none";
         downloadBtn.style.display = "none";
+        gridWrapper.style.display = "none";
+        gridBody.innerHTML = ""; // Wipe clean any old grid data layout rows
 
         try {
-            // Sends a request to your FastAPI processing endpoint
             const response = await fetch('/generate-assignments/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -111,12 +159,27 @@
             });
             
             const data = await response.json();
-            
             status.style.display = "block";
+            
             if (data.status === "success") {
                 status.className = "statusMessage success";
                 status.innerText = "🎉 Pairings computed successfully!";
-                downloadBtn.style.display = "block"; // Show download link
+                downloadBtn.style.display = "block";
+                
+                // POPULATE GRID ROWS LOOP DIRECTLY
+                if (data.assignments && data.assignments.length > 0) {
+                    data.assignments.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><b>${row.employee_name}</b></td>
+                            <td>${row.employee_email}</td>
+                            <td><b>${row.secret_child_name}</b></td>
+                            <td>${row.secret_child_email}</td>
+                        `;
+                        gridBody.appendChild(tr);
+                    });
+                    gridWrapper.style.display = "block"; // Turn on grid container visibility
+                }
             } else {
                 status.className = "statusMessage error";
                 status.innerText = "Error: " + data.detail;
