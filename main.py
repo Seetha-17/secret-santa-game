@@ -71,10 +71,32 @@ def generate_assignments(payload: dict):
         return {"status": "error", "detail": str(e)}
 
 # Your existing GET download route
+@app.get("/download-assignments/")
+def download_assignments():
+    """
+    This endpoint downloads the generated Secret Santa assignments CSV file directly.
+    """
+    if not os.path.exists(OUTPUT_FILE):
+        raise HTTPException(
+            status_code=404, 
+            detail="Assignments file not found. Please click Generate first."
+        )
+    return FileResponse(
+        path=OUTPUT_FILE, 
+        media_type="text/csv", 
+        filename="secret_santa_assignments.csv"
+    )
+
+# ===================================================
+# 2. YOUR HOMEPAGE ROUTE (Leave this as is below it)
+# ===================================================
 @app.get("/", response_class=HTMLResponse)
 def serve_homepage():
-    # Check if running as a compiled standalone executable bundle
-    base_path = getattr(sys, '__MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(_file_))
+        
     template_path = os.path.join(base_path, "templates", "index.html")
     
     if not os.path.exists(template_path):
@@ -83,6 +105,6 @@ def serve_homepage():
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
