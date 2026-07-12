@@ -4,7 +4,7 @@ from models.employee import Employee
 from models.assignment import SecretSantaAssignment
 
 class SecretSantaMatcher:
-    def _init_(self, employees: List[Employee], previous_assignments: Dict[Employee, Employee] = None):
+    def __init__(self, employees: List[Employee], previous_assignments: Dict[Employee, Employee] = None):
         """
         Constructor to initialize the participants list and previous pairings history.
         """
