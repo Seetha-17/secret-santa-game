@@ -21,4 +21,4 @@ def generate_assignments(payload: dict):
 # Keep your local testing block at the bottom if you have one
 if __name__ == "_main_":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
