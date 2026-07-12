@@ -34,16 +34,19 @@ def generate_assignments(payload: dict):
         if not os.path.exists(EMPLOYEE_FILE):
             return {"status": "error", "detail": f"Missing input file: {EMPLOYEE_FILE}"}
             
-        employees = CSVHandler.read_employees(EMPLOYEE_FILE)
+        # 1. CHANGE THIS LINE from read_employees to read_employees_list
+        employees = CSVHandler.read_employees_list(EMPLOYEE_FILE)
         
         previous_assignments = {}
         if os.path.exists(PREVIOUS_ASSIGNMENTS_FILE):
-            previous_assignments = CSVHandler.read_previous_assignments(PREVIOUS_ASSIGNMENTS_FILE)
+            # 2. CHANGE THIS LINE from read_previous_assignments to read_historical_map
+            previous_assignments = CSVHandler.read_historical_map(PREVIOUS_ASSIGNMENTS_FILE)
         
         matcher = SecretSantaMatcher(employees, previous_assignments)
         assignments = matcher.assign()
         
-        CSVHandler.write_assignments(OUTPUT_FILE, assignments)
+        # 3. CHANGE THIS LINE to match your exact export function name (write_assignments_out)
+        CSVHandler.write_assignments_out(OUTPUT_FILE, assignments)
         return {"status": "success", "message": "Assignments successfully generated!"}
         
     except Exception as e:
