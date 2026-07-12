@@ -1,54 +1,53 @@
-import sys
 import os
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
 from services.csv_handler import CSVHandler
 from services.matcher import SecretSantaMatcher
 
-# Initialize the FastAPI app framework
-app = FastAPI(title="Secret Santa Matcher API")
+# Title updated to Secret Santa Game
+app = FastAPI(title="Secret Santa Game")
 
-def ensure_dummy_files():
-    """Creates blank template files if they are missing on the server layout"""
-    if not os.path.exists('employees.csv'):
-        with open('employees.csv', 'w') as f:
-            f.write("EmployeeID,Name,Email\n") # basic header template
-    if not os.path.exists('previous_assignments.csv'):
-        with open('previous_assignments.csv', 'w') as f:
-            f.write("EmployeeID,PreviousMatchID\n") # basic header template
+# Define the Request Body structure
+class AssignmentRequest(BaseModel):
+    current_year_file: str
+    previous_year_file: Optional[str] = None
 
-@app.get("/")
-def read_root():
-    return {"status": "Server is running!", "message": "Go to /run-matcher to generate your Secret Santa list."}
-
-@app.get("/run-matcher")
-def run_matcher():
+# POST endpoint for generating assignments
+@app.post("/generate-assignments/", summary="Generate Assignments")
+def generate_assignments(request: AssignmentRequest):
     try:
-        # Create empty tracking targets if missing on startup
-        ensure_dummy_files()
+        # Use the file names provided by the user in the form input
+        employees_file = request.current_year_file
+        history_file = request.previous_year_file if request.previous_year_file else 'previous_assignments.csv'
         
+        # Verify files exist on the server before trying to read them
+        if not os.path.exists(employees_file):
+            raise HTTPException(status_code=400, detail=f"File not found: {employees_file}")
+            
         # Load your data registries
-        employees = CSVHandler.load_employees('employees.csv')
-        history = CSVHandler.load_history('previous_assignments.csv')
+        employees = CSVHandler.load_employees(employees_file)
+        history = CSVHandler.load_history(history_file) if os.path.exists(history_file) else []
         
         # Run the assignment algorithms
         matcher = SecretSantaMatcher(employees, history)
         results = matcher.generate_assignments()
         
         # Save output assignments
-        CSVHandler.save_assignments('secret_santa_output.csv', results)
+        output_path = 'secret_santa_output.csv'
+        CSVHandler.save_assignments(output_path, results)
         
         return JSONResponse(content={
             "status": "Success",
-            "message": "Successfully generated secret_santa_output.csv",
+            "message": f"Successfully generated {output_path}",
             "assignments_count": len(results)
         }, status_code=200)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Operational Execution Error: {str(e)}")
 
-if __name__ == "_main_":
-    # Render maps network bindings dynamically using environmental port tags
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
