@@ -53,11 +53,17 @@ def generate_assignments(payload: dict):
         return {"status": "error", "detail": str(e)}
 
 # Your existing GET download route
-@app.get("/download-assignments/")
-def download_assignments():
-    if not os.path.exists(OUTPUT_FILE):
-        raise HTTPException(status_code=404, detail="Assignments file not found. Generate first.")
-    return FileResponse(path=OUTPUT_FILE, media_type="text/csv", filename="secret_santa_assignments.csv")
+@app.get("/", response_class=HTMLResponse)
+def serve_homepage():
+    # Check if running as a compiled standalone executable bundle
+    base_path = getattr(sys, 'MEIPASS', os.path.dirname(os.path.abspath(file_)))
+    template_path = os.path.join(base_path, "templates", "index.html")
+    
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=404, detail="HTML template file structure missing on instance.")
+        
+    with open(template_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 if __name__ == "_main_":
     import uvicorn
