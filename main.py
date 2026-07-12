@@ -8,9 +8,15 @@ from services.matcher import SecretSantaMatcher
 
 app = FastAPI()
 
-EMPLOYEE_FILE = "employees.csv"
-PREVIOUS_ASSIGNMENTS_FILE = "previous_year_assignments.csv"
-OUTPUT_FILE = "current_assignments.csv"
+# Automatically detects if running as an EXE to get the real directory path
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+EMPLOYEE_FILE = os.path.join(BASE_DIR, "employees.csv")
+PREVIOUS_ASSIGNMENTS_FILE = os.path.join(BASE_DIR, "previous_year_assignments.csv")
+OUTPUT_FILE = os.path.join(BASE_DIR, "current_assignments.csv")
 
 # ==========================================
 # NEW BASE ROUTE TO SERVE THE HTML WEB INTERFACE
@@ -20,12 +26,15 @@ def serve_homepage():
     """
     Serves the front-end dashboard directly when loading the root URL.
     """
-    template_path = os.path.join("templates", "index.html")
-    if not os.path.exists(template_path):
+    # Directs the app to unpack index.html from PyInstaller's hidden folder
+internal_base = getattr(sys, '__MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+template_path = os.path.join(internal_base, "templates", "index.html")
+
+if not os.path.exists(template_path):
         raise HTTPException(status_code=404, detail="HTML template file structure missing on server instance.")
-        
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
+
+with open(template_path, "r", encoding="utf-8") as f:
+    homepage_content = f.read()
 
 # Your existing POST generation route
 @app.post("/generate-assignments/")
@@ -56,7 +65,7 @@ def generate_assignments(payload: dict):
 @app.get("/", response_class=HTMLResponse)
 def serve_homepage():
     # Check if running as a compiled standalone executable bundle
-    base_path = getattr(sys, 'MEIPASS', os.path.dirname(os.path.abspath(file_)))
+    base_path = getattr(sys, '__MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     template_path = os.path.join(base_path, "templates", "index.html")
     
     if not os.path.exists(template_path):
@@ -65,6 +74,6 @@ def serve_homepage():
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
