@@ -19,6 +19,6 @@ def generate_assignments(payload: dict):
         return {"status": "error", "detail": str(e)}
 
 # Keep your local testing block at the bottom if you have one
-if _name_ == "_main_":
+if __name__ == "_main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
