@@ -1,7 +1,7 @@
 import csv
 from typing import List, Dict
 from models.employee import Employee
-from models.assignment import SecretSantaAssignment
+from models.assignment import Assignment
 
 class CSVHandler:
     @staticmethod
@@ -26,7 +26,7 @@ class CSVHandler:
         return history
 
     @staticmethod
-    def save_assignments(file_path: str, assignments: List[SecretSantaAssignment]):
+    def save_assignments(file_path: str, assignments: List[Assignment]):
         fieldnames = ['Employee_Name', 'Employee_EmailID', 'Secret_Child_Name', 'Secret_Child_EmailID']
         with open(file_path, mode='w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
