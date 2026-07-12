@@ -24,17 +24,26 @@ OUTPUT_FILE = os.path.join(BASE_DIR, "current_assignments.csv")
 @app.get("/", response_class=HTMLResponse)
 def serve_homepage():
     """
-    Serves the front-end dashboard directly when loading the root URL.
+    Dynamically routes paths between local desktop environments 
+    and live deployed Render cloud containers automatically.
     """
-    # Directs the app to unpack index.html from PyInstaller's hidden folder
-internal_base = getattr(sys, '__MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-template_path = os.path.join(internal_base, "templates", "index.html")
-
-if not os.path.exists(template_path):
-        raise HTTPException(status_code=404, detail="HTML template file structure missing on server instance.")
-
-with open(template_path, "r", encoding="utf-8") as f:
-    homepage_content = f.read()
+    # 1. Checks if running inside an unpacked local desktop executable bundle
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        # 2. Falls back to standard root repository matching for live web servers
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        
+    template_path = os.path.join(base_path, "templates", "index.html")
+    
+    if not os.path.exists(template_path):
+        raise HTTPException(
+            status_code=404, 
+            detail=f"HTML template missing. Looking at target path: {template_path}"
+        )
+        
+    with open(template_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 # Your existing POST generation route
 @app.post("/generate-assignments/")
