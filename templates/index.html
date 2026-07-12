@@ -1,0 +1,136 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Secret Santa Automator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 24px;
+            text-align: center;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2ecc71;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        .download-btn {
+            background-color: #3498db;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+        .download-btn:hover {
+            background-color: #2980b9;
+        }
+        #statusMessage {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎄 Acme Secret Santa Engine</h1>
+    
+    <div class="form-group">
+        <button id="generateBtn" onclick="triggerGeneration()">Generate Current Assignments</button>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <a id="downloadBtn" href="/download-assignments/" class="download-btn" download>📥 Download Output CSV File</a>
+</div>
+
+<script>
+    async function triggerGeneration() {
+        const btn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('statusMessage');
+        
+        btn.disabled = true;
+        btn.innerText = "Processing Logic...";
+        status.style.display = "none";
+        downloadBtn.style.display = "none";
+
+        try {
+            // Sends a request to your FastAPI processing endpoint
+            const response = await fetch('/generate-assignments/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            
+            const data = await response.json();
+            
+            status.style.display = "block";
+            if (data.status === "success") {
+                status.className = "statusMessage success";
+                status.innerText = "🎉 Pairings computed successfully!";
+                downloadBtn.style.display = "block"; // Show download link
+            } else {
+                status.className = "statusMessage error";
+                status.innerText = "Error: " + data.detail;
+            }
+        } catch (err) {
+            status.style.display = "block";
+            status.className = "statusMessage error";
+            status.innerText = "Failed to connect to backend server service rules.";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Generate Current Assignments";
+        }
+    }
+</script>
+
+</body>
+</html>
