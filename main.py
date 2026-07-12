@@ -9,6 +9,15 @@ from services.matcher import SecretSantaMatcher
 # Initialize the FastAPI app framework
 app = FastAPI(title="Secret Santa Matcher API")
 
+def ensure_dummy_files():
+    """Creates blank template files if they are missing on the server layout"""
+    if not os.path.exists('employees.csv'):
+        with open('employees.csv', 'w') as f:
+            f.write("EmployeeID,Name,Email\n") # basic header template
+    if not os.path.exists('previous_assignments.csv'):
+        with open('previous_assignments.csv', 'w') as f:
+            f.write("EmployeeID,PreviousMatchID\n") # basic header template
+
 @app.get("/")
 def read_root():
     return {"status": "Server is running!", "message": "Go to /run-matcher to generate your Secret Santa list."}
@@ -16,6 +25,9 @@ def read_root():
 @app.get("/run-matcher")
 def run_matcher():
     try:
+        # Create empty tracking targets if missing on startup
+        ensure_dummy_files()
+        
         # Load your data registries
         employees = CSVHandler.load_employees('employees.csv')
         history = CSVHandler.load_history('previous_assignments.csv')
@@ -36,7 +48,7 @@ def run_matcher():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Operational Execution Error: {str(e)}")
 
-if __name__== "__main__":
+if __name__ == "_main_":
     # Render maps network bindings dynamically using environmental port tags
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
