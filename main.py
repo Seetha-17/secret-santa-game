@@ -1,4 +1,6 @@
 import sys
+from models.employee import Employee
+from models.assignment import Assignment
 from server_client import SecretSantaServerClient, ServerConnectionError
 
 def run_remote_pipeline():
@@ -31,5 +33,5 @@ def run_remote_pipeline():
     except Exception as general_error:
         print(f"\n[Unexpected Local Runtime Failure] {general_error}", file=sys.stderr)
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     run_remote_pipeline()
