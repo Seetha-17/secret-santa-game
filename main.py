@@ -29,7 +29,7 @@ def serve_homepage():
     """
     # 1. Checks if running inside an unpacked local desktop executable bundle
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        base_path = sys._MEIPASS
+        base_path = sys.__MEIPASS
     else:
         # 2. Falls back to standard root repository matching for live web servers
         base_path = os.path.dirname(os.path.abspath(__file__))
