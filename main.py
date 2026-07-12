@@ -1,53 +1,35 @@
-import os
-import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import Optional
-from services.csv_handler import CSVHandler
-from services.matcher import SecretSantaMatcher
+import sys
+from server_client import SecretSantaServerClient, ServerConnectionError
 
-# Title updated to Secret Santa Game
-app = FastAPI(title="Secret Santa Game")
+def run_remote_pipeline():
+    # Base URL collected directly from your browser's address bar
+    RENDER_SERVER_URL = "https://onrender.com"
+    
+    # Files configured inside your application workspace environment
+    CURRENT_YEAR_INPUT_FILE = "employee.csv"
+    PREVIOUS_YEAR_HISTORY_FILE = "previous_assignments.csv"
 
-# Define the Request Body structure
-class AssignmentRequest(BaseModel):
-    current_year_file: str
-    previous_year_file: Optional[str] = None
-
-# POST endpoint for generating assignments
-@app.post("/generate-assignments/", summary="Generate Assignments")
-def generate_assignments(request: AssignmentRequest):
+    print("--- Initiating Acme Remote Server Secret Santa Pipeline ---")
+    
+    # Initialize our API client module instance
+    client = SecretSantaServerClient(base_url=RENDER_SERVER_URL)
+    
     try:
-        # Use the file names provided by the user in the form input
-        employees_file = request.current_year_file
-        history_file = request.previous_year_file if request.previous_year_file else 'previous_assignments.csv'
+        # Trigger remote generation via API call
+        server_response = client.trigger_generate_assignments(
+            current_file=CURRENT_YEAR_INPUT_FILE,
+            previous_file=PREVIOUS_YEAR_HISTORY_FILE
+        )
         
-        # Verify files exist on the server before trying to read them
-        if not os.path.exists(employees_file):
-            raise HTTPException(status_code=400, detail=f"File not found: {employees_file}")
-            
-        # Load your data registries
-        employees = CSVHandler.load_employees(employees_file)
-        history = CSVHandler.load_history(history_file) if os.path.exists(history_file) else []
+        # Display the server's structured feedback or data output preview
+        print("\n--- Live Server Response Data ---")
+        import json
+        print(json.dumps(server_response, indent=2))
         
-        # Run the assignment algorithms
-        matcher = SecretSantaMatcher(employees, history)
-        results = matcher.generate_assignments()
-        
-        # Save output assignments
-        output_path = 'secret_santa_output.csv'
-        CSVHandler.save_assignments(output_path, results)
-        
-        return JSONResponse(content={
-            "status": "Success",
-            "message": f"Successfully generated {output_path}",
-            "assignments_count": len(results)
-        }, status_code=200)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Operational Execution Error: {str(e)}")
+    except ServerConnectionError as conn_error:
+        print(f"\n[API Connection Fault] {conn_error}", file=sys.stderr)
+    except Exception as general_error:
+        print(f"\n[Unexpected Local Runtime Failure] {general_error}", file=sys.stderr)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+if _name_ == "_main_":
+    run_remote_pipeline()
